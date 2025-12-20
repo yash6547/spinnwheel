@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Premium Spin Wheel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;width:100%;height:100%;background:radial-gradient(circle at top,#0b1220,#020617);font-family:'Manrope',sans-serif;overflow:hidden;}
+.app{display:flex;height:100vh}
+.wheel-zone{flex:1;position:relative;display:flex;align-items:center;justify-content:center;}
+canvas{filter:drop-shadow(0 0 90px rgba(99,102,241,.35));}
+
+/* POINTER */
+.pointer{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translateY(-50%);
+  margin-left:calc((var(--wheel-size)/2)-2px); /* edge pe */
+  width:0;height:0;
+  border-top:16px solid transparent;
+  border-bottom:16px solid transparent;
+  border-right:28px solid #f8fafc;
+  filter:drop-shadow(0 0 12px rgba(255,255,255,.9));
+  z-index:6;
+}
+
+/* SPIN BUTTON */
+.spin-btn{
+  position:absolute;
+  width:120px;height:120px;
+  border-radius:50%;
+  background:radial-gradient(circle at top,#f8fafc,#9ca3af);
+  border:8px solid #020617;
+  font-weight:700;
+  cursor:pointer;
+  z-index:5;
+}
+
+/* SIDE PANEL */
+.panel{
+  width:340px;padding:28px;background:rgba(255,255,255,.06);backdrop-filter:blur(20px);
+  box-shadow:-15px 0 45px rgba(0,0,0,.7);
+  display:flex;flex-direction:column;gap:14px;
+}
+.panel h2{color:#e5e7eb;margin:0}
+.panel input{padding:14px;border-radius:14px;border:none;background:rgba(0,0,0,.45);color:#fff;}
+.panel button{padding:14px;border-radius:14px;border:none;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#38bdf8,#6366f1);color:#020617;}
+.result{margin-top:auto;font-size:18px;color:#67e8f9;font-weight:700;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="wheel-zone">
+    <canvas id="wheel"></canvas>
+    <div class="pointer"></div>
+    <button class="spin-btn" onclick="spin()">SPIN</button>
+  </div>
+  <div class="panel">
+    <h2>Wheel Values</h2>
+    <input id="itemsInput" placeholder="Win,Lose,Bonus">
+    <button onclick="setupWheel()">Update Wheel</button>
+    <div class="result" id="result">Ready</div>
+  </div>
+</div>
+
+<script>
+const canvas=document.getElementById("wheel");
+const ctx=canvas.getContext("2d");
+
+const spinSound=new Audio("tick.m4a");
+spinSound.preload="auto";
+
+let items=["Win","Lose","Bonus","Try Again"];
+let angle=0,spinning=false,wheelSize=0;
+
+const theme=["#2563eb","#6366f1","#14b8a6","#22c55e","#f59e0b","#ec4899"];
+
+function resize(){
+  wheelSize=Math.min(innerHeight,innerWidth*0.65)*0.9;
+  canvas.width=wheelSize;
+  canvas.height=wheelSize;
+  document.documentElement.style.setProperty('--wheel-size',wheelSize+"px");
+  draw();
+}
+window.onresize=resize;
+resize();
+
+function setupWheel(){
+  const v=document.getElementById("itemsInput").value.trim();
+  if(v) items=v.split(",").map(i=>i.trim());
+  draw();
+}
+
+function draw(){
+  const r=canvas.width/2;
+  const slice=(2*Math.PI)/items.length;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  items.forEach((text,i)=>{
+    const start=slice*i;
+    const end=slice*(i+1);
+    ctx.beginPath();
+    ctx.moveTo(r,r);
+    ctx.arc(r,r,r,start,end);
+    ctx.fillStyle=theme[i%theme.length];
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(r,r);
+    ctx.rotate(start+slice/2);
+    ctx.textAlign="right";
+    ctx.font="700 18px Manrope";
+    ctx.fillStyle="#020617";
+    ctx.fillText(text,r-26,6);
+    ctx.restore();
+  });
+}
+
+function spin(){
+  if(spinning) return;
+  spinning=true;
+
+  spinSound.currentTime=0;
+  spinSound.play();
+
+  const duration=6000; // total 6 sec
+  const start=performance.now();
+  const startAngle=angle;
+  const targetRotation=startAngle + (Math.random()*720 + 10000);
+
+  function animate(t){
+    const progress=Math.min((t-start)/duration,1);
+
+    /* FAST 10 sec, then slow 2 sec */
+    let easedProgress;
+    if(progress < 0.333){ // first 2 sec
+    easedProgress = easeOutFast(progress/0.333)*0.333;
+} else { // last 4 sec
+    easedProgress = 0.333 + easeOutCubic((progress-0.333)/0.667)*0.667;
+}
+
+
+    angle=startAngle+(targetRotation-startAngle)*easedProgress;
+
+    ctx.save();
+    ctx.translate(canvas.width/2,canvas.height/2);
+    ctx.rotate(angle*Math.PI/180);
+    ctx.translate(-canvas.width/2,-canvas.height/2);
+    draw();
+    ctx.restore();
+
+    if(progress<1){
+      requestAnimationFrame(animate);
+    } else{
+      spinning=false;
+      spinSound.pause();
+      spinSound.currentTime=0;
+      showResult();
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function showResult(){
+  const slice=360/items.length;
+  const i=Math.floor((360-angle%360)/slice)%items.length;
+  document.getElementById("result").innerText="Result: "+items[i];
+}
+
+function easeOutFast(t){ return t; }       // fast linear
+function easeOutCubic(t){ return 1-Math.pow(1-t,3); } // slow deceleration
+
+draw();
+</script>
+</body>
+</html>
