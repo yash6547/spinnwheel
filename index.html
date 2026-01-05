@@ -1,184 +1,591 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Premium Spin Wheel</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700&display=swap" rel="stylesheet">
-<style>
-html,body{margin:0;width:100%;height:100%;background:radial-gradient(circle at top,#0b1220,#020617);font-family:'Manrope',sans-serif;overflow:hidden;}
-.app{display:flex;height:100vh}
-.wheel-zone{flex:1;position:relative;display:flex;align-items:center;justify-content:center;}
-canvas{filter:drop-shadow(0 0 90px rgba(99,102,241,.35));}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SUBWAY SURFERS: SUPERNOVA LEGEND - ELITE EDITION</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Orbitron:wght@400;700;900&display=swap');
+        
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #000; 
+            font-family: 'Orbitron', sans-serif; 
+            -webkit-touch-callout: none; 
+            -webkit-user-select: none; 
+            user-select: none; 
+            touch-action: none;
+        }
+        
+        #hud-container {
+            position: absolute; 
+            top: 25px; 
+            left: 25px; 
+            z-index: 100; 
+            pointer-events: none;
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px;
+        }
 
-/* POINTER */
-.pointer {
-  position: absolute;
-  top: 50%; /* vertical center of the wheel */
-  left: 100%; /* wheel ke right edge pe */
-  transform: translate(-500%,-50%) rotate(180deg); /* center adjust aur rotation ready */
-  width: 0;
-  height: 0;
-  border-top: 16px solid transparent;
-  border-bottom: 16px solid transparent;
-  border-left: 28px solid #f8fafc; /* pointer arrow right side dikhane ke liye */
-  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.9));
-  z-index: 6;
-  transform-origin: left center; /* rotate karne ke liye pivot edge pe */
-}
+        .data-panel {
+            background: linear-gradient(135deg, rgba(0,25,50,0.95) 0%, rgba(0,0,0,0.85) 100%);
+            padding: 25px 40px; 
+            border-radius: 0 50px 50px 0; 
+            border-left: 12px solid #f1c40f;
+            box-shadow: 0 0 50px rgba(241,196,15,0.4); 
+            border-top: 1px solid rgba(255,255,255,0.25);
+            backdrop-filter: blur(15px);
+        }
 
+        .stamina-wrapper { 
+            width: 400px; 
+            position: relative; 
+            filter: drop-shadow(0 0 15px rgba(0,0,0,0.6));
+        }
 
-/* SPIN BUTTON */
-.spin-btn{
-  position:absolute;
-  width:120px;height:120px;
-  border-radius:50%;
-  background:radial-gradient(circle at top,#f8fafc,#9ca3af);
-  border:8px solid #020617;
-  font-weight:700;
-  cursor:pointer;
-  z-index:5;
-}
+        .stamina-rail { 
+            height: 28px; 
+            background: rgba(0,0,0,0.7); 
+            border: 4px solid #fff; 
+            border-radius: 60px; 
+            overflow: hidden; 
+            box-shadow: inset 0 0 20px #000; 
+        }
 
-/* SIDE PANEL */
-.panel{
-  width:340px;padding:28px;background:rgba(255,255,255,.06);backdrop-filter:blur(20px);
-  box-shadow:-15px 0 45px rgba(0,0,0,.7);
-  display:flex;flex-direction:column;gap:14px;
-}
-.panel h2{color:#e5e7eb;margin:0}
-.panel input{padding:14px;border-radius:14px;border:none;background:rgba(0,0,0,.45);color:#fff;}
-.panel button{padding:14px;border-radius:14px;border:none;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#38bdf8,#6366f1);color:#020617;}
-.result{margin-top:auto;font-size:18px;color:#67e8f9;font-weight:700;}
-</style>
+        #stamina-bar { 
+            width: 100%; 
+            height: 100%; 
+            background: linear-gradient(90deg, #00f2fe, #4facfe, #00f2fe); 
+            background-size: 200% 100%;
+            box-shadow: 0 0 35px #4facfe; 
+            transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+            animation: barGlow 2s infinite linear;
+        }
+
+        @keyframes barGlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        #stamina-warning { 
+            position: absolute; 
+            top: -30px; 
+            left: 10px; 
+            color: #ff0033; 
+            font-size: 16px; 
+            font-weight: 900; 
+            opacity: 0; 
+            text-transform: uppercase; 
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px #ff0033;
+        }
+
+        #biome-overlay { 
+            position: absolute; 
+            top: 25px; 
+            right: 35px; 
+            color: #fff; 
+            font-family: 'Black Ops One', cursive; 
+            font-size: 38px; 
+            letter-spacing: 6px; 
+            text-shadow: 0 0 25px rgba(0,0,0,0.9), 0 0 15px #f1c40f; 
+        }
+
+        #control-grid { 
+            position: absolute; 
+            bottom: 60px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            display: grid; 
+            grid-template-areas: ". up ." "left down right"; 
+            gap: 30px; 
+            z-index: 200; 
+        }
+
+        .control-btn {
+            width: 100px; 
+            height: 100px; 
+            background: rgba(255,255,255,0.08); 
+            border: 5px solid rgba(255,255,255,0.5);
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: #fff;
+            font-size: 42px; 
+            cursor: pointer; 
+            backdrop-filter: blur(20px); 
+            transition: all 0.15s ease;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+
+        .control-btn:active { 
+            background: #f1c40f; 
+            color: #000; 
+            border-color: #f1c40f; 
+            transform: scale(0.8); 
+            box-shadow: 0 0 70px #f1c40f; 
+        }
+
+        .up { grid-area: up; } .down { grid-area: down; } .left { grid-area: left; } .right { grid-area: right; }
+
+        #game-over-screen {
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: radial-gradient(circle, rgba(60,0,0,1) 0%, rgba(0,0,0,1) 100%);
+            z-index: 1000; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            color: #fff; 
+            text-align: center;
+        }
+
+        .busted-title { 
+            font-family: 'Black Ops One'; 
+            font-size: 150px; 
+            color: #ff0033; 
+            margin: 0; 
+            letter-spacing: 15px; 
+            filter: drop-shadow(0 0 45px #ff0033); 
+            animation: shake 0.6s infinite;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(0,0); }
+            20% { transform: translate(6px, -6px); }
+            40% { transform: translate(-6px, 6px); }
+            60% { transform: translate(6px, 6px); }
+            80% { transform: translate(-6px, -6px); }
+            100% { transform: translate(0,0); }
+        }
+
+        .final-score-text { 
+            font-size: 45px; 
+            font-weight: 900; 
+            margin: 40px 0; 
+            color: #f1c40f; 
+            text-transform: uppercase;
+            letter-spacing: 6px;
+        }
+
+        .re-run-btn {
+            padding: 35px 120px; 
+            font-size: 40px; 
+            font-weight: 900; 
+            background: #f1c40f; 
+            color: #000;
+            border: none; 
+            border-radius: 120px; 
+            cursor: pointer; 
+            box-shadow: 0 18px 0 #9e8508; 
+            transition: 0.2s;
+            font-family: 'Orbitron';
+        }
+    </style>
 </head>
 <body>
-<div class="app">
-  <div class="wheel-zone">
-    <canvas id="wheel"></canvas>
-    <div class="pointer"></div>
-    <button class="spin-btn" onclick="spin()">SPIN</button>
-  </div>
-  <div class="panel">
-    <h2>Wheel Values</h2>
-    <input id="itemsInput" placeholder="Win,Lose,Bonus">
-    <button onclick="setupWheel()">Update Wheel</button>
-    <div class="result" id="result">Ready</div>
-  </div>
+
+<div id="hud-container">
+    <div class="data-panel">
+        <div style="font-size: 16px; color: #f1c40f; letter-spacing: 6px; margin-bottom: 8px; font-weight: 700;">LIVE_FEED_SYNC</div>
+        <div style="font-size: 75px; font-weight: 900; font-family: 'Orbitron';" id="score-val">000000</div>
+    </div>
+    <div class="stamina-wrapper">
+        <div id="stamina-warning">CRITICAL ENERGY - SYSTEM COLLAPSE</div>
+        <div class="stamina-rail"><div id="stamina-bar"></div></div>
+    </div>
 </div>
 
+<div id="biome-overlay">ZONE: SUNSET_VALLEY</div>
+
+<div id="control-grid">
+    <div class="control-btn up" onmousedown="inputAction('up')" ontouchstart="inputAction('up')">▲</div>
+    <div class="control-btn left" onmousedown="inputAction('left')" ontouchstart="inputAction('left')">◀</div>
+    <div class="control-btn down" onmousedown="inputAction('down')" ontouchstart="inputAction('down')">▼</div>
+    <div class="control-btn right" onmousedown="inputAction('right')" ontouchstart="inputAction('right')">▶</div>
+</div>
+
+<div id="game-over-screen">
+    <h1 class="busted-title">SYSTEM HALT</h1>
+    <p id="stats-summary" class="final-score-text"></p>
+    <button class="re-run-btn" onclick="location.reload()">RE-SYNC</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const canvas=document.getElementById("wheel");
-const ctx=canvas.getContext("2d");
+// --- CORE CONFIGURATION ---
+const FACE_ASSETS = ["file:///D:/Downloads/modi.png"];
 
-const spinSound=new Audio("https://github.com/yash6547/spinnwheel/raw/refs/heads/main/tick.m4a");
-spinSound.preload="auto";
+const PARAMS = {
+    lanes: [-5.5, 0, 5.5],
+    speed: 1.30,
+    jumpPower: 0.49,
+    gravity: 0.022,
+    staminaRate: 0.04, 
+    staminaGain: 30,    
+    spawnInterval: 950, // REVERTED TO NORMAL (approx 1 second)
+    trackSegmentCount: 50,
+    trackSegmentLength: 25
+};
 
-let items=["GK","Geography","History","Economics","Science","Technology","Guess"];
-let angle=0,spinning=false,wheelSize=0;
-
-const theme=["#2563eb","#6366f1","#14b8a6","#22c55e","#f59e0b","#ec4899"];
-
-function resize(){
-  wheelSize=Math.min(innerHeight,innerWidth*0.65)*0.9;
-  canvas.width=wheelSize;
-  canvas.height=wheelSize;
-  document.documentElement.style.setProperty('--wheel-size',wheelSize+"px");
-  draw();
-}
-window.onresize=resize;
-resize();
-
-function setupWheel(){
-  const v=document.getElementById("itemsInput").value.trim();
-  if(v) items=v.split(",").map(i=>i.trim());
-  draw();
-}
-
-function draw(){
-  const r=canvas.width/2;
-  const slice=(2*Math.PI)/items.length;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  items.forEach((text,i)=>{
-    const start=slice*i;
-    const end=slice*(i+1);
-    ctx.beginPath();
-    ctx.moveTo(r,r);
-    ctx.arc(r,r,r,start,end);
-    ctx.fillStyle=theme[i%theme.length];
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(r,r);
-    ctx.rotate(start+slice/2);
-    ctx.textAlign="right";
-    ctx.font="700 18px Manrope";
-    ctx.fillStyle="#020617";
-    ctx.fillText(text,r-26,6);
-    ctx.restore();
-  });
-}
-
-function spin(){
-  if(spinning) return;
-  spinning=true;
-
-  spinSound.currentTime=0;
-  spinSound.play();
-
-  const duration=6000; // total 6 sec
-  const start=performance.now();
-  const startAngle=angle;
-  const targetRotation=startAngle + (Math.random()*720 + 10000);
-
-  function animate(t){
-    const progress=Math.min((t-start)/duration,1);
-
-    /* FAST 10 sec, then slow 2 sec */
-    let easedProgress;
-    if(progress < 0.333){ // first 2 sec
-    easedProgress = easeOutFast(progress/0.333)*0.333;
-} else { // last 4 sec
-    easedProgress = 0.333 + easeOutCubic((progress-0.333)/0.667)*0.667;
-}
-
-
-    angle=startAngle+(targetRotation-startAngle)*easedProgress;
-
-    ctx.save();
-    ctx.translate(canvas.width/2,canvas.height/2);
-    ctx.rotate(angle*Math.PI/180);
-    ctx.translate(-canvas.width/2,-canvas.height/2);
-    draw();
-    ctx.restore();
-
-    if(progress<1){
-      requestAnimationFrame(animate);
-    } else{
-      spinning=false;
-      spinSound.pause();
-      spinSound.currentTime=0;
-      showResult();
+// --- SOUND ENGINE ---
+const SoundEngine = {
+    ctx: null,
+    init() { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+    playFootstep() {
+        if(!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.frequency.setValueAtTime(55, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.12);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.12);
+    },
+    playCoinSound() {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.frequency.setValueAtTime(950, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1900, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.15);
+    },
+    playJumpSound() {
+        const osc = this.ctx.createOscillator();
+        osc.frequency.exponentialRampToValueAtTime(500, this.ctx.currentTime + 0.25);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.25);
     }
-  }
-  requestAnimationFrame(animate);
+};
+
+let scene, camera, renderer, player, police, dog, worldTracks, atmosphericFX, sunObj;
+let score = 0, stamina = 100, activeLane = 0, isRunning = true, totalDist = 0;
+let obstaclePool = [], decorationPool = [], clock = new THREE.Clock();
+let jumping = false, verticalV = 0, sliding = false, onTrain = false;
+
+// --- DAYLIGHT ATMOSPHERE BUILDERS (NO REMOVALS) ---
+function createRealisticTree(x, z) {
+    const group = new THREE.Group();
+    // Complex Trunk
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 9, 10), new THREE.MeshStandardMaterial({ color: 0x3d1f00 }));
+    trunk.position.y = 4.5;
+    // Layered Foliage
+    const f1 = new THREE.Mesh(new THREE.SphereGeometry(4.5, 8, 8), new THREE.MeshStandardMaterial({ color: 0x1b5e20 }));
+    f1.position.y = 11;
+    const f2 = f1.clone(); f2.scale.set(0.7, 0.7, 0.7); f2.position.y = 14;
+    group.add(trunk, f1, f2);
+    group.position.set(x, 0, z);
+    return group;
 }
 
-function showResult(){
-  const slice=360/items.length;
-  const i=Math.floor((360-angle%360)/slice)%items.length;
-  document.getElementById("result").innerText="Result: "+items[i];
+function createDaylightSystem() {
+    sunObj = new THREE.Group();
+    const core = new THREE.Mesh(new THREE.SphereGeometry(12, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffeb3b }));
+    const light = new THREE.DirectionalLight(0xffffff, 1.4);
+    light.position.set(0, 0, 0);
+    light.castShadow = true;
+    sunObj.add(core, light);
+    sunObj.position.set(150, 250, -1000);
+    scene.add(sunObj);
 }
 
-function easeOutFast(t){ return t; }       // fast linear
-function easeOutCubic(t){ return 1-Math.pow(1-t,3); } // slow deceleration
+// --- CHARACTER & RAILWAY OBJECTS ---
+function buildCharacter(color, isLaw = false) {
+    const group = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.2, metalness: 0.6 });
+    const skin = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+    
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.6, 0.75), mat);
+    body.position.y = 1.5; group.add(body);
+    
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.75, 0.75), skin);
+    head.position.y = 2.7; group.add(head);
+    
+    const limb = new THREE.BoxGeometry(0.35, 1.1, 0.35);
+    group.la = new THREE.Mesh(limb, skin); group.la.position.set(-0.8, 1.9, 0); group.add(group.la);
+    group.ra = new THREE.Mesh(limb, skin); group.ra.position.set(0.8, 1.9, 0); group.add(group.ra);
+    group.ll = new THREE.Mesh(limb, mat); group.ll.position.set(-0.4, 0.6, 0); group.add(group.ll);
+    group.rl = new THREE.Mesh(limb, mat); group.rl.position.set(0.4, 0.6, 0); group.add(group.rl);
+    
+    if(isLaw) {
+        const cap = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.4, 1.3), new THREE.MeshStandardMaterial({color: 0x000}));
+        cap.position.y = 3.2; group.add(cap);
+    }
+    group.rotation.y = Math.PI;
+    return group;
+}
 
-draw();
+function createStationSegment(z) {
+    const seg = new THREE.Group();
+    // TRACK BASE
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 26), new THREE.MeshStandardMaterial({ color: 0x121212 }));
+    ground.rotation.x = -Math.PI / 2;
+    seg.add(ground);
+
+    // SIDE DECORATION (Grass & Nature)
+    const grassL = new THREE.Mesh(new THREE.PlaneGeometry(35, 26), new THREE.MeshStandardMaterial({ color: 0x1b5e20 }));
+    grassL.rotation.x = -Math.PI / 2; grassL.position.set(-55, 0.05, 0); seg.add(grassL);
+    const grassR = grassL.clone(); grassR.position.x = 55; seg.add(grassR);
+
+    // RAILS & SLEEPERS (RESTORED)
+    PARAMS.lanes.forEach(x => {
+        const rMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.9 });
+        const r1 = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.5, 26), rMat);
+        r1.position.set(x - 1.4, 0.25, 0); seg.add(r1);
+        const r2 = r1.clone(); r2.position.set(x + 1.4, 0.25, 0); seg.add(r2);
+        
+        for(let i = -12; i < 13; i += 3.2) {
+            const s = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.25, 0.9), new THREE.MeshStandardMaterial({ color: 0x2e1a00 }));
+            s.position.set(x, 0.1, i); seg.add(s);
+        }
+    });
+
+    // NEON PLATFORMS (NO REMOVALS)
+    const pMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    const nMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 0.8 });
+    const platL = new THREE.Mesh(new THREE.BoxGeometry(14, 2, 26), pMat);
+    platL.position.set(-25, 1, 0);
+    const neonLine = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 26), nMat);
+    neonLine.position.set(7.1, 1.1, 0); platL.add(neonLine); seg.add(platL);
+    const platR = platL.clone(); platR.position.x = 25; platR.children[0].position.x = -7.1; seg.add(platR);
+
+    // Add Trees on Sides
+    if(Math.random() > 0.45) {
+        seg.add(createRealisticTree(-50 - Math.random()*10, 0));
+        seg.add(createRealisticTree(50 + Math.random()*10, 0));
+    }
+
+    seg.position.z = z;
+    worldTracks.add(seg);
+}
+
+// --- CORE SYSTEMS ---
+function init() {
+    SoundEngine.init();
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB); // Clear Blue Sky
+    scene.fog = new THREE.FogExp2(0x87CEEB, 0.003);
+    
+    camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 3000);
+    camera.position.set(0, 16, 30);
+    
+    renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+    
+    createDaylightSystem();
+    scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+
+    worldTracks = new THREE.Group();
+    scene.add(worldTracks);
+    for (let i = 0; i < PARAMS.trackSegmentCount; i++) { 
+        createStationSegment(-i * PARAMS.trackSegmentLength); 
+    }
+
+    // Atmosphere FX
+    const pGeo = new THREE.BufferGeometry();
+    const pPos = new Float32Array(20000 * 3);
+    for (let i = 0; i < pPos.length; i++) { pPos[i] = (Math.random() - 0.5) * 1200; }
+    pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
+    atmosphericFX = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.7, color: 0x4caf50, transparent: true, opacity: 0.4 }));
+    scene.add(atmosphericFX);
+
+    player = buildCharacter(0x0077ff);
+    scene.add(player);
+    
+    police = buildCharacter(0x222222, true);
+    scene.add(police);
+    
+    dog = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 1.9), new THREE.MeshStandardMaterial({ color: 0x5d4037 }));
+    scene.add(dog);
+
+    window.addEventListener("keydown", e => inputAction(e.key));
+    window.addEventListener("resize", onResize);
+    
+    spawnController();
+    mainLoop();
+}
+
+// --- BALANCED SPAWNER (FIXED INTERCEPT ERROR) ---
+function spawnController() {
+    if(!isRunning) return;
+    
+    const lx = PARAMS.lanes[Math.floor(Math.random() * 3)];
+    const rnd = Math.random();
+
+    if(rnd < 0.4) { // TRAINS
+        const isRamp = Math.random() > 0.4;
+        const train = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(5.8, 6.5, 32), new THREE.MeshStandardMaterial({color: isRamp ? 0x2c3e50 : 0xb71c1c, metalness: 0.8}));
+        body.position.y = 3.25; train.add(body);
+        if(isRamp) {
+            const ramp = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.6, 14), new THREE.MeshStandardMaterial({color: 0xffa000}));
+            ramp.position.set(0, 1.8, 18); ramp.rotation.x = 0.36; train.add(ramp);
+            train.userData = { type: 'train_up' };
+        } else {
+            train.userData = { type: 'train_kill' };
+        }
+        train.position.set(lx, 0, -500);
+        scene.add(train); obstaclePool.push(train);
+    } 
+    else if (rnd < 0.55) { // MODI FACE (ULTRA-FIXED HITBOX)
+        const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin('anonymous');
+        const tex = loader.load(FACE_ASSETS[0]);
+        const face = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 0.8), new THREE.MeshStandardMaterial({ map: tex, transparent: true }));
+        face.position.set(lx, 2.5, -500);
+        face.userData = { type: 'face' };
+        scene.add(face); obstaclePool.push(face);
+    }
+    else if (rnd < 0.7) { // STAMINA
+        const bottle = new THREE.Group();
+        const b = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.8), new THREE.MeshStandardMaterial({color: 0x00e676, emissive: 0x00e676, emissiveIntensity: 0.5}));
+        const l = new THREE.PointLight(0x00e676, 1, 6);
+        bottle.add(b, l);
+        bottle.position.set(lx, 1.6, -500);
+        bottle.userData = { type: 'stamina' };
+        scene.add(bottle); obstaclePool.push(bottle);
+    }
+    else { // COIN LINE
+        for(let j = 0; j < 6; j++) {
+            const coin = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.25, 12, 24), new THREE.MeshStandardMaterial({color: 0xfbc02d, metalness: 0.8}));
+            coin.position.set(lx, 2, -450 - (j * 7));
+            coin.rotation.y = Math.PI/2;
+            coin.userData = { type: 'coin' };
+            scene.add(coin); obstaclePool.push(coin);
+        }
+    }
+
+    setTimeout(spawnController, PARAMS.spawnInterval);
+}
+
+function inputAction(type) {
+    if(!isRunning) return;
+    if(SoundEngine.ctx && SoundEngine.ctx.state === 'suspended') SoundEngine.ctx.resume();
+    if((type === 'left' || type === 'ArrowLeft') && activeLane > -1) activeLane--;
+    if((type === 'right' || type === 'ArrowRight') && activeLane < 1) activeLane++;
+    if((type === 'up' || type === 'ArrowUp' || type === ' ') && !jumping) { 
+        jumping = true; verticalV = PARAMS.jumpPower; 
+        SoundEngine.playJumpSound();
+    }
+    if((type === 'down' || type === 'ArrowDown')) { sliding = true; setTimeout(() => sliding = false, 800); }
+}
+
+function animateLimb(char, time, speed) {
+    const ang = Math.sin(time * 12 * speed);
+    char.ll.rotation.x = ang * 0.7; char.rl.rotation.x = -ang * 0.7;
+    char.la.rotation.x = -ang * 0.7; char.ra.rotation.x = ang * 0.7;
+    char.children[0].position.y = 1.5 + (Math.abs(ang) * 0.15);
+}
+
+// --- MAIN LOOP ---
+function mainLoop() {
+    if(!isRunning) return;
+    requestAnimationFrame(mainLoop);
+    const dt = clock.getDelta();
+    const elapsed = clock.getElapsedTime();
+    totalDist += PARAMS.speed;
+
+    // SCENERY DYNAMICS
+    atmosphericFX.rotation.y += 0.0008;
+    sunObj.position.x = 150 + Math.cos(elapsed * 0.15) * 35;
+
+    // CHARACTER ANIMATION
+    if(!jumping && !sliding) {
+        animateLimb(player, elapsed, 1.25);
+    } else if(sliding) {
+        player.scale.y = 0.5; player.position.y = 0;
+    } else {
+        player.scale.y = 1;
+    }
+    animateLimb(police, elapsed, 1.15);
+
+    // PHYSICS & CAMERA
+    if(jumping) {
+        player.position.y += verticalV;
+        verticalV -= PARAMS.gravity;
+        if(player.position.y <= 0) { player.position.y = 0; jumping = false; }
+    } else if(!onTrain) {
+        player.position.y = THREE.MathUtils.lerp(player.position.y, 0, 0.15);
+    }
+
+    const targetX = PARAMS.lanes[activeLane + 1];
+    player.position.x = THREE.MathUtils.lerp(player.position.x, targetX, 0.18);
+    police.position.x = THREE.MathUtils.lerp(police.position.x, player.position.x, 0.07);
+    police.position.z = 13 + (stamina / 7);
+    dog.position.set(police.position.x + 1.8, 0.6, police.position.z + 1.8);
+
+    // TRACK SCROLLING
+    worldTracks.children.forEach(seg => {
+        seg.position.z += PARAMS.speed;
+        if(seg.position.z > 50) seg.position.z -= PARAMS.trackSegmentCount * PARAMS.trackSegmentLength;
+    });
+
+    // COLLISION ENGINE (ULTRA PRECISION)
+    let trainInReach = false;
+    for(let i = obstaclePool.length - 1; i >= 0; i--) {
+        const o = obstaclePool[i];
+        o.position.z += PARAMS.speed;
+        
+        const dx = Math.abs(o.position.x - player.position.x);
+        const dz = Math.abs(o.position.z - player.position.z);
+
+        if(dz < 3.2 && dx < 2.5) {
+            if(o.userData.type === 'train_up') {
+                player.position.y = THREE.MathUtils.lerp(player.position.y, 6.7, 0.3);
+                trainInReach = true;
+            } else if(o.userData.type === 'train_kill' && player.position.y < 5.4) {
+                die("CRASHED_INTO_FREIGHT");
+            } else if(o.userData.type === 'face') {
+                // PRECISION FIX: Only kills if you are exactly in front (dz < 1.0) and below face height
+                if(dz < 1.0 && player.position.y < 5.0) die("SYSTEM INTERCEPTED");
+            } else if(o.userData.type === 'coin') {
+                score += 100; SoundEngine.playCoinSound();
+                document.getElementById('score-val').innerText = score.toString().padStart(6, '0');
+                scene.remove(o); obstaclePool.splice(i, 1); continue;
+            } else if(o.userData.type === 'stamina') {
+                stamina = Math.min(100, stamina + PARAMS.staminaGain);
+                scene.remove(o); obstaclePool.splice(i, 1); continue;
+            }
+        }
+        if(o.position.z > 80) { scene.remove(o); obstaclePool.splice(i, 1); }
+    }
+
+    onTrain = trainInReach;
+    stamina -= PARAMS.staminaRate;
+    document.getElementById('stamina-bar').style.width = stamina + "%";
+    
+    if(stamina < 30) {
+        document.getElementById('stamina-warning').style.opacity = (Math.sin(elapsed * 12) * 0.5) + 0.5;
+    } else {
+        document.getElementById('stamina-warning').style.opacity = 0;
+    }
+    if(stamina <= 0) die("OUT_OF_ENERGY");
+
+    camera.lookAt(player.position.x * 0.5, 7, player.position.z - 18);
+    renderer.render(scene, camera);
+}
+
+function die(msg) {
+    isRunning = false;
+    document.getElementById('game-over-screen').style.display = 'flex';
+    document.getElementById('stats-summary').innerText = `${msg} | SCORE: ${score}`;
+}
+
+function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+init();
 </script>
 </body>
 </html>
-
-
-
-
